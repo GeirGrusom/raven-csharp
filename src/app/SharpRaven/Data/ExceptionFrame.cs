@@ -44,6 +44,9 @@ namespace SharpRaven.Data
     // TODO: Rename this class to SentryExceptionFrame for consistency. -asbjornu
     public class ExceptionFrame
     {
+        /// <summary>
+        /// Constructs an instance of ExceptionFrame without specifying any properties.
+        /// </summary>
         public ExceptionFrame()
         {
             
