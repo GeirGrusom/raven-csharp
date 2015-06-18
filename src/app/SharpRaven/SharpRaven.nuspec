@@ -21,11 +21,13 @@
         <dependency id="Microsoft.Bcl.Build" version="1.0.14" />
         <dependency id="Microsoft.Net.Http" version="2.2.29"  />
       </group>
-      <dependency id="Newtonsoft.Json" version="6.0.6" />
+      <group>
+        <dependency id="Newtonsoft.Json" version="6.0.6" />
+      </group>
     </dependencies>
   </metadata>
   <files>
-    <file src="SharpRaven\bin\Release\net45\SharpRaven.*" target="lib\net45" />
-    <file src="SharpRaven\bin\Release\portable-net45+sl50+win+MonoAndroid10+xamarinios10+MonoTouch10\SharpRaven.*" target="portable-net45+sl50+win+MonoAndroid10+xamarinios10+MonoTouch10" />
+    <file src="bin\Release\net45\SharpRaven.*" target="lib\net45" />
+    <file src="bin\Release\portable-net45+sl50+win+MonoAndroid10+xamarinios10+MonoTouch10\SharpRaven.*" target="lib\portable-net45+sl50+win+MonoAndroid10+xamarinios10+MonoTouch10" />
   </files>
 </package>
