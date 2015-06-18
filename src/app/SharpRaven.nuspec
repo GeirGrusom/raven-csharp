@@ -15,10 +15,17 @@
     <copyright>Copyright 2014 The Sentry Team and individual contributors</copyright>
     <tags>raven sentry logging</tags>
     <dependencies>
+      <group targetFramework="portable-net45+sl50+win+MonoAndroid10+xamarinios10+MonoTouch10">
+        <dependency id="Microsoft.Bcl" version="1.1.10" />
+        <dependency id="Microsoft.Bcl.Async" version="1.0.168" />
+        <dependency id="Microsoft.Bcl.Build" version="1.0.14" />
+        <dependency id="Microsoft.Net.Http" version="2.2.29"  />
+      </group>
       <dependency id="Newtonsoft.Json" version="6.0.6" />
     </dependencies>
   </metadata>
   <files>
-    <file src="bin\Release\**\SharpRaven.*" target="lib" />
+    <file src="SharpRaven\bin\Release\net45\SharpRaven.*" target="lib\net45" />
+    <file src="SharpRaven\bin\Release\portable-net45+sl50+win+MonoAndroid10+xamarinios10+MonoTouch10\SharpRaven.*" target="portable-net45+sl50+win+MonoAndroid10+xamarinios10+MonoTouch10" />
   </files>
 </package>
