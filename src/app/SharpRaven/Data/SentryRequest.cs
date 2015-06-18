@@ -29,6 +29,7 @@
 #endregion
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
@@ -44,6 +45,7 @@ namespace SharpRaven.Data
     /// </summary>
     public class SentryRequest
     {
+
         internal SentryRequest()
         {
             // NOTE: We're using dynamic to not require a reference to System.Web.
@@ -171,8 +173,7 @@ namespace SharpRaven.Data
             };
         }
 
-
-        private static IDictionary<string, string> Convert(Func<dynamic, NameObjectCollectionBase> collectionGetter)
+        private static IDictionary<string, string> Convert(Func<dynamic, IEnumerable> collectionGetter)
         {
             if (!HasHttpContext)
                 return null;
@@ -221,7 +222,13 @@ namespace SharpRaven.Data
             }
             catch (Exception exception)
             {
+#if PCL
+                System.Diagnostics.Debug.WriteLine(exception);
+#else
                 Console.WriteLine(exception);
+#endif
+                throw;
+
             }
 
             return dictionary;
@@ -233,8 +240,25 @@ namespace SharpRaven.Data
             if (HasHttpContext)
                 return;
 
+#if PCL
+                var httpContext = Type.GetType("System.Web.HttpContext, System.Web");
+
+                if (HasHttpContext || httpContext == null)
+                    return;
+
+                var currentHttpContextProperty = httpContext.GetProperty("Current",
+                                                                         BindingFlags.Public | BindingFlags.Static);
+
+                if (currentHttpContextProperty == null)
+                    return;
+
+                HttpContext = currentHttpContextProperty.GetValue(null, null);
+#else
+
             try
             {
+
+
                 var systemWeb = AppDomain.CurrentDomain
                                          .GetAssemblies()
                                          .FirstOrDefault(assembly => assembly.FullName.StartsWith("System.Web,"));
@@ -260,6 +284,7 @@ namespace SharpRaven.Data
             {
                 Console.WriteLine("An error occurred while retrieving the HTTP context: {0}", exception);
             }
+#endif
         }
 
 
@@ -271,7 +296,11 @@ namespace SharpRaven.Data
             }
             catch (Exception exception)
             {
+#if PCL
+                System.Diagnostics.Debug.WriteLine(exception);
+#else
                 Console.WriteLine(exception);
+#endif
             }
 
             return null;
@@ -286,7 +315,11 @@ namespace SharpRaven.Data
             }
             catch (Exception exception)
             {
+#if PCL
+                System.Diagnostics.Debug.WriteLine(exception);
+#else
                 Console.WriteLine(exception);
+#endif
             }
 
             return null;

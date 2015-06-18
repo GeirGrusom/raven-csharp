@@ -29,6 +29,8 @@
 #endregion
 
 using System;
+using System.Linq;
+using System.Reflection;
 
 namespace SharpRaven.Utilities
 {
@@ -46,10 +48,21 @@ namespace SharpRaven.Utilities
         /// </summary>
         static PacketBuilder()
         {
+#if PCL
+            var assembly = typeof(PacketBuilder).Assembly;
+            var title =
+                assembly.GetCustomAttributes(typeof(AssemblyTitleAttribute), false).OfType<AssemblyTitleAttribute>()
+                        .First();
+            var version =
+                assembly.GetCustomAttributes(typeof(AssemblyInformationalVersionAttribute), false)
+                        .OfType<AssemblyInformationalVersionAttribute>().First();
+            userAgent = title.Title + "/" + version.InformationalVersion;
+#else
             var assemblyName = typeof(PacketBuilder).Assembly.GetName();
             var name = assemblyName.Name;
             var version = assemblyName.Version;
             userAgent = String.Format("{0}/{1}", name, version);
+#endif
         }
 
 

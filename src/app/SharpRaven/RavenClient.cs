@@ -31,9 +31,10 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq.Expressions;
 using System.Net;
-
-#if !(net40)
+using System.Text;
+#if !(net40) || PCL
   using System.Net.Http;
   using System.Net.Http.Headers;
   using System.Threading.Tasks;
@@ -55,6 +56,9 @@ namespace SharpRaven
         private readonly Dsn currentDsn;
         private readonly IJsonPacketFactory jsonPacketFactory;
 
+#if PCL
+        private readonly System.Net.Http.HttpClient _client;
+#endif
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RavenClient" /> class.
@@ -75,6 +79,10 @@ namespace SharpRaven
         /// <exception cref="System.ArgumentNullException">dsn</exception>
         public RavenClient(Dsn dsn, IJsonPacketFactory jsonPacketFactory = null)
         {
+#if PCL
+            _client = new HttpClient { BaseAddress = dsn.SentryUri };
+            _client.DefaultRequestHeaders.Add("X-Sentry-Auth", PacketBuilder.CreateAuthenticationHeader(dsn));
+#endif
             if (dsn == null)
                 throw new ArgumentNullException("dsn");
 
@@ -178,6 +186,39 @@ namespace SharpRaven
         {
             packet.Logger = Logger;
 
+#if PCL
+            try
+            {
+
+                var contents = packet.ToString(Formatting.Indented);
+
+                if (this.LogScrubber != null)
+                    contents = this.LogScrubber.Scrub(contents);
+
+                var message = new StringContent(contents, Encoding.UTF8, "application/json; charset=utf-8");
+
+                var result = _client.PostAsync("", message).ConfigureAwait(false).GetAwaiter().GetResult();
+
+                dynamic resultMessage =
+                    JsonConvert.DeserializeObject(
+                        result.Content.ReadAsStringAsync().ConfigureAwait(false).GetAwaiter().GetResult());
+
+                return resultMessage.id;
+
+            }
+            catch (WebException wex)
+            {
+                using (var reader = new StreamReader(wex.Response.GetResponseStream()))
+                {
+                    System.Diagnostics.Debug.WriteLine("[MESSAGE BODY]: {0}", reader.ReadToEnd());
+                }
+            }
+            catch
+            {
+                return null;
+            }
+#else
+
             try
             {
                 var request = (HttpWebRequest) WebRequest.Create(dsn.SentryUri);
@@ -254,7 +295,7 @@ namespace SharpRaven
                     Console.WriteLine("[MESSAGE BODY] " + messageBody);
                 }
             }
-
+#endif
             return null;
         }
 

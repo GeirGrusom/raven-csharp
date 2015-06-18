@@ -28,8 +28,10 @@
 
 #endregion
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Text;
 
 using Newtonsoft.Json;
@@ -42,6 +44,12 @@ namespace SharpRaven.Data
     // TODO: Rename this class to SentryExceptionFrame for consistency. -asbjornu
     public class ExceptionFrame
     {
+        public ExceptionFrame()
+        {
+            
+        }
+
+#if !PCL
         /// <summary>
         /// Initializes a new instance of the <see cref="ExceptionFrame"/> class.
         /// </summary>
@@ -67,7 +75,7 @@ namespace SharpRaven.Data
             LineNumber = lineNo;
             ColumnNumber = frame.GetFileColumnNumber();
         }
-
+#endif
 
         /// <summary>
         /// Gets or sets the absolute path.

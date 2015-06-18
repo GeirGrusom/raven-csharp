@@ -29,6 +29,7 @@
 #endregion
 
 using System;
+using System.Reflection;
 using System.Text;
 
 using Newtonsoft.Json;
@@ -53,7 +54,18 @@ namespace SharpRaven.Data
                 return;
 
             this.message = exception.Message;
+#if PCL
+
+            var type = exception.GetType();
+            var src = type.GetProperty("Source");
+            if (src != null)
+                Module = (string) src.GetValue(exception, null);
+            else
+                Module = "";
+            
+#else 
             Module = exception.Source;
+#endif
             Type = exception.GetType().FullName;
             Value = exception.Message;
 
@@ -61,7 +73,6 @@ namespace SharpRaven.Data
             if (Stacktrace.Frames == null || Stacktrace.Frames.Length == 0)
                 Stacktrace = null;
         }
-
 
         /// <summary>
         /// The module where the exception happened.

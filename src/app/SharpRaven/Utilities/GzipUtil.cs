@@ -28,9 +28,11 @@
 
 #endregion
 
+#if !PCL
 using System.IO;
 using System.IO.Compression;
 using System.Text;
+
 
 namespace SharpRaven.Utilities
 {
@@ -54,3 +56,4 @@ namespace SharpRaven.Utilities
         }
     }
 }
+#endif

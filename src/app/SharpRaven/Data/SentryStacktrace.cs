@@ -29,8 +29,12 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.Contracts;
+using System.Globalization;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 
 using Newtonsoft.Json;
@@ -51,21 +55,159 @@ namespace SharpRaven.Data
             if (exception == null)
                 return;
 
+            Frames = GetStackFrames(exception);
+        }
+
+
+#if PCL
+        [Pure]
+        private static ExceptionFrame[] GetStackFrames(Exception exception)
+        {
+            var stackTraceType = Type.GetType("System.Diagnostics.StackTrace, mscorlib");
+
+            // If we don't have access to System.Diagnostics.StackTrace we default to using regex match on the stacktrace.
+            if (stackTraceType != null)
+            {
+                try
+                {
+                    return GetStackframesUsingStackTrace(stackTraceType, exception).ToArray();
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine("[ERROR] Unable to get exception stack trace!");
+                    Debug.WriteLine("[ERROR] " + ex.GetType().Name + ": " + ex.Message);
+                }
+            }
+            try
+            {
+                return GetStackframesUsingRegularExpressions(exception).ToArray();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("[ERROR] Unable to get exception stack trace!");
+                Debug.WriteLine("[ERROR] " + ex.GetType().Name + ": " + ex.Message);
+                return new ExceptionFrame[0];
+            }
+        }
+
+        private static readonly System.Text.RegularExpressions.Regex stackFrameRegex = new System.Text.RegularExpressions.Regex("at (?<Source>.*?) (in (?<Filename>.*?):line (?<LineNumber>[0-9]+))?");
+
+        [Pure]
+        private static IEnumerable<ExceptionFrame> GetStackframesUsingRegularExpressions(Exception exception)
+        {
+            // This is an unstable way to do this, but I couldn't think of a better approach.
+            var match = stackFrameRegex.Match(exception.StackTrace);
+            var frames = new List<ExceptionFrame>();
+            while (match.Success)
+            {
+                string filename;
+                int lineNumber;
+                var fn = match.Groups["Filename"];
+                if (fn.Success)
+                    filename = fn.Value;
+                else
+                    filename = null;
+
+                var ln = match.Groups["LineNumber"];
+                if (ln.Success)
+                {
+                    lineNumber = int.Parse(ln.Value);
+                }
+                else
+                    lineNumber = 0;
+
+                frames.Add(new ExceptionFrame
+                {
+                    Function = match.Groups["Source"].Value,
+                    Source = match.Groups["Filename"].Value,
+                    Filename = filename,
+                    LineNumber = lineNumber
+                });
+                match = match.NextMatch();
+
+            }
+            return frames;
+        }
+
+        [Pure]
+        private static IEnumerable<ExceptionFrame> GetStackframesUsingStackTrace(Type stackTraceType, Exception exception)
+        {
+            // Use dynamic dispatch to evaluate methods at runtime.
+            dynamic stackTrace = Activator.CreateInstance(stackTraceType, exception, true);
+
+            var stackFrames = (dynamic[])stackTrace.GetFrames();
+
+            return stackFrames.Select(x =>
+            {
+                var m = x.GetMethod();
+                
+                string asmName;
+
+                if (m.DeclaringType != null)
+                {
+                    var asm = (Assembly)m.DeclaringType.Assembly;
+
+                    var title =
+                        asm.GetCustomAttributes(typeof(AssemblyTitleAttribute), false).OfType<AssemblyTitleAttribute>()
+                           .FirstOrDefault();
+
+                    if (title != null)
+                        asmName = title.Title;
+                    else
+                        asmName = asm.FullName;
+                }
+                else
+                    asmName = null;
+
+                return new ExceptionFrame
+                {
+                    Filename = x.GetFileName(),
+                    Function = GetMethodName(m),
+                    ColumnNumber = x.GetFileColumnNumber(),
+                    LineNumber = x.GetFileLineNumber(),
+                    Module = m.Module.Name,
+                    Source = asmName
+                };
+
+            }).ToArray();
+        }
+
+        [Pure]
+        private static string GetMethodName(MethodBase m)
+        {
+            if (m.DeclaringType == null)
+            {
+                return string.Format("{0}({1})",
+                          m.Name,
+                          string.Join(", ", m.GetParameters().Select(x => x.ParameterType.Name)));
+            }
+            return string.Format("{0}.{1}({2})",
+                          m.DeclaringType.FullName,
+                          m.Name,
+                          string.Join(", ", m.GetParameters().Select(x => x.ParameterType.Name)));
+        }
+
+#else
+        [Pure]
+        private static ExceptionFrame[] GetStackFrames(Exception exception)
+        {
             StackTrace trace = new StackTrace(exception, true);
             var frames = trace.GetFrames();
 
             if (frames == null)
-                return;
+                return null;
 
             int length = frames.Length;
-            Frames = new ExceptionFrame[length];
+            var resultFrames = new ExceptionFrame[length];
 
             for (int i = 0; i < length; i++)
             {
                 StackFrame frame = trace.GetFrame(i);
-                Frames[i] = new ExceptionFrame(frame);
+                resultFrames[i] = new ExceptionFrame(frame);
             }
+            return resultFrames;
         }
+#endif
 
 
         /// <summary>

@@ -73,7 +73,11 @@ namespace SharpRaven
             }
             catch (Exception exception)
             {
+#if PCL
+                throw new ArgumentException("Invalid DSN", exception); // WTF? PCL ArgumentException cannot have parameter name *and* inner exception?
+#else
                 throw new ArgumentException("Invalid DSN", "dsn", exception);
+#endif
             }
         }
 

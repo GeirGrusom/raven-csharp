@@ -47,6 +47,10 @@ namespace SharpRaven.Utilities
         /// </returns>
         public static IDictionary<string, string> GetModules()
         {
+#if PCL
+            // Isn't in use, so I think I can ignore this.
+            return new Dictionary<string, string>();
+#else
             var assemblies = AppDomain.CurrentDomain
                                       .GetAssemblies()
                                       .Select(a => a.GetName())
@@ -63,6 +67,7 @@ namespace SharpRaven.Utilities
             }
 
             return dictionary;
+#endif
         }
     }
 }

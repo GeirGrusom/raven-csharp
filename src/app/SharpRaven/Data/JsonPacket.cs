@@ -56,6 +56,8 @@ namespace SharpRaven.Data
 
             Message = exception.Message;
 
+#if !PCL
+
             if (exception.TargetSite != null)
             {
                 // ReSharper disable ConditionIsAlwaysTrueOrFalse => not for dynamic types.
@@ -66,16 +68,34 @@ namespace SharpRaven.Data
                                         exception.TargetSite.Name);
                 // ReSharper restore ConditionIsAlwaysTrueOrFalse
             }
+#endif
 
             Exceptions = new List<SentryException>();
+
 
             for (Exception currentException = exception;
                 currentException != null;
                 currentException = currentException.InnerException)
             {
+
+#if PCL
+                dynamic ex = currentException;
+                string source;
+                try
+                {
+                    source = ex.Source;
+                }
+                catch
+                {
+                    source = "";
+                }
+#else
+                string source = currentException.Source;
+#endif
+
                 SentryException sentryException = new SentryException(currentException)
                 {
-                    Module = currentException.Source,
+                    Module = source,
                     Type = currentException.GetType().Name,
                     Value = currentException.Message
                 };
@@ -108,7 +128,9 @@ namespace SharpRaven.Data
             Modules = SystemUtil.GetModules();
 
             // The current hostname
+#if !PCL
             ServerName = Environment.MachineName;
+#endif
 
             // Create timestamp
             TimeStamp = DateTime.UtcNow;
@@ -132,9 +154,13 @@ namespace SharpRaven.Data
             Request = SentryRequest.GetRequest();
 
             // Get the user data from the HTTP context or environment
+#if PCL
+            User = Request != null ? Request.GetUser() : null;
+#else
             User = Request != null
                        ? Request.GetUser()
                        : new SentryUser(Environment.UserName);
+#endif
         }
 
 
