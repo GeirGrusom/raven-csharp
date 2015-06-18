@@ -53,16 +53,14 @@ namespace SharpRaven.UnitTests.Integration
             ProcessStartInfo start = new ProcessStartInfo(pathToNuGet)
             {
                 Arguments = String.Format(
-                        "Pack \"{0}\" -Verbosity detailed -Prop Configuration=Release -Prop ReleaseNotes=Test -Prop Platform=AnyCPU",
-                        @"src\app\SharpRaven\SharpRaven.csproj",
-                        //@"src\app\SharpRaven\SharpRaven.nuspec",
-                        typeof(IRavenClient).Assembly.GetName().Version),
+                        "Pack \"{0}\" -Verbosity detailed -Prop Configuration=\"Release 4.5\" -Prop ReleaseNotes=Test -Properties Platform=AnyCPU",
+                        pathToNuSpec),
                 CreateNoWindow = true,
                 UseShellExecute = false,
                 RedirectStandardError = true,
                 RedirectStandardOutput = true,
                 WindowStyle = ProcessWindowStyle.Hidden,
-                WorkingDirectory = MakeAbsolute(@".\")
+                //WorkingDirectory = MakeAbsolute(@".\src\app\SharpRaven\")
             };
 
             using (var process = new Process())
