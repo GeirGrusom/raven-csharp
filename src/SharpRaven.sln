@@ -18,9 +18,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{8A88BB
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "app", "app", "{88CB5CD6-ACFA-441E-9FBB-E1E06F181B89}"
-	ProjectSection(SolutionItems) = preProject
-		app\SharpRaven\SharpRaven.nuspec = app\SharpRaven\SharpRaven.nuspec
-	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{D2B3990A-A048-49F3-A697-A1DAEF82CE7F}"
 EndProject
