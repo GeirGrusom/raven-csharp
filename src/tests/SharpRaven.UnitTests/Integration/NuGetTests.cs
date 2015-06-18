@@ -48,19 +48,21 @@ namespace SharpRaven.UnitTests.Integration
         public void Pack_Works()
         {
             string pathToNuGet = MakeAbsolute(@".nuget\NuGet.exe");
-            string pathToNuSpec = MakeAbsolute(@"src\app\SharpRaven\SharpRaven.nuspec");
+            string pathToNuSpec = MakeAbsolute(@"src\app\SharpRaven\SharpRaven.csproj");
 
             ProcessStartInfo start = new ProcessStartInfo(pathToNuGet)
             {
                 Arguments = String.Format(
-                        "Pack {0} -Version {1} -Properties Configuration=Release -Properties \"ReleaseNotes=Test\"",
-                        pathToNuSpec,
+                        "Pack \"{0}\" -Version \"{1}\" -Verbosity detailed -Properties Configuration=Release -Properties \"ReleaseNotes=Test\"",
+                        //@"src\app\SharpRaven\SharpRaven.csproj",
+                        @"src\app\SharpRaven\SharpRaven.nuspec",
                         typeof(IRavenClient).Assembly.GetName().Version),
                 CreateNoWindow = true,
                 UseShellExecute = false,
                 RedirectStandardError = true,
                 RedirectStandardOutput = true,
                 WindowStyle = ProcessWindowStyle.Hidden,
+                WorkingDirectory = MakeAbsolute(@".\")
             };
 
             using (var process = new Process())
@@ -79,9 +81,8 @@ namespace SharpRaven.UnitTests.Integration
 
         private static string MakeAbsolute(string relativePath)
         {
-            string absolutePath = Path.Combine(Environment.CurrentDirectory, @"..\..\..\..\..\..\", relativePath);
+            return Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, @"..\..\..\..\..\..\", relativePath));
 
-            return new DirectoryInfo(absolutePath).FullName;
         }
     }
 }
