@@ -60,12 +60,24 @@ namespace SharpRaven.Data
 
 
 #if PCL
+
+        // These methods are here to facilitate PCL libraries. They are required because the PCL version of System.Exception is missing
+        // a lot of functionality. You cannot get each stack frame for example.
+
+
+        /// <summary>
+        /// This method tries to retrieve stack frames from an exception for the PCL code path. It will first try using dynamic and reflection. If this fails
+        /// it will fall back to parsing the stack trace, which is a less than ideal solution.
+        /// </summary>
+        /// <param name="exception">The Exception to retrieve a stack trace from.</param>
+        /// <returns></returns>
         [Pure]
         private static ExceptionFrame[] GetStackFrames(Exception exception)
         {
+            // First we check if the StackTrace type is available in the environments mscorlib.
+            // if not we defer to the parsing strategy.
             var stackTraceType = Type.GetType("System.Diagnostics.StackTrace, mscorlib");
 
-            // If we don't have access to System.Diagnostics.StackTrace we default to using regex match on the stacktrace.
             if (stackTraceType != null)
             {
                 try
@@ -74,7 +86,8 @@ namespace SharpRaven.Data
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine("[ERROR] Unable to get exception stack trace!");
+                    // If an exception happens we will fall through and do a regex parse.
+                    Debug.WriteLine("[ERROR] Unable to get exception stack trace! Trying with a regex match.");
                     Debug.WriteLine("[ERROR] " + ex.GetType().Name + ": " + ex.Message);
                 }
             }
@@ -92,6 +105,12 @@ namespace SharpRaven.Data
 
         private static readonly System.Text.RegularExpressions.Regex stackFrameRegex = new System.Text.RegularExpressions.Regex("at (?<Source>.*?) (in (?<Filename>.*?):line (?<LineNumber>[0-9]+))?");
 
+
+        /// <summary>
+        /// This method tries to parse the stack trace of an exception. This is a very un-ideal solution that is hopefully never actually in use.
+        /// </summary>
+        /// <param name="exception"></param>
+        /// <returns></returns>
         [Pure]
         private static IEnumerable<ExceptionFrame> GetStackframesUsingRegularExpressions(Exception exception)
         {
@@ -102,19 +121,12 @@ namespace SharpRaven.Data
             {
                 string filename;
                 int lineNumber;
+
                 var fn = match.Groups["Filename"];
-                if (fn.Success)
-                    filename = fn.Value;
-                else
-                    filename = null;
+                filename = fn.Success ? fn.Value : null;
 
                 var ln = match.Groups["LineNumber"];
-                if (ln.Success)
-                {
-                    lineNumber = int.Parse(ln.Value);
-                }
-                else
-                    lineNumber = 0;
+                lineNumber = ln.Success ? int.Parse(ln.Value) : 0;
 
                 frames.Add(new ExceptionFrame
                 {
@@ -129,6 +141,12 @@ namespace SharpRaven.Data
             return frames;
         }
 
+        /// <summary>
+        /// This method tries to retrieve stack frames from an exception using the systems StactTrace type located in mscorlib.
+        /// </summary>
+        /// <param name="stackTraceType"></param>
+        /// <param name="exception"></param>
+        /// <returns></returns>
         [Pure]
         private static IEnumerable<ExceptionFrame> GetStackframesUsingStackTrace(Type stackTraceType, Exception exception)
         {

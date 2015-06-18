@@ -30,6 +30,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 
 using Newtonsoft.Json;
 
@@ -119,6 +120,18 @@ namespace SharpRaven.Data
         }
 
 
+        // This is used as a cache for Enviornment.MachineName to avoid doing reflection for every request.
+        private static readonly string environmentMachineName;
+
+        static JsonPacket()
+        {
+            // This seems very roundabout, but Environment.MachineName is not available on PCL libraries.
+            var environmentType = typeof(Environment);
+            var prop = environmentType.GetProperty("MachineName", BindingFlags.Public | BindingFlags.Static);
+            if (prop != null)
+                environmentMachineName = (string)prop.GetValue(null, null);
+        }
+
         /// <summary>
         /// Prevents a default instance of the <see cref="JsonPacket"/> class from being created.
         /// </summary>
@@ -128,9 +141,7 @@ namespace SharpRaven.Data
             Modules = SystemUtil.GetModules();
 
             // The current hostname
-#if !PCL
-            ServerName = Environment.MachineName;
-#endif
+            ServerName = environmentMachineName;
 
             // Create timestamp
             TimeStamp = DateTime.UtcNow;
@@ -153,10 +164,12 @@ namespace SharpRaven.Data
             // Get data from the HTTP request
             Request = SentryRequest.GetRequest();
 
-            // Get the user data from the HTTP context or environment
+            
 #if PCL
+            // Probably not available in PCL environments.
             User = Request != null ? Request.GetUser() : null;
 #else
+            // Get the user data from the HTTP context or environment
             User = Request != null
                        ? Request.GetUser()
                        : new SentryUser(Environment.UserName);
