@@ -32,6 +32,8 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 
+using Microsoft.CSharp.RuntimeBinder;
+
 using Newtonsoft.Json;
 
 using SharpRaven.Serialization;
@@ -56,20 +58,32 @@ namespace SharpRaven.Data
                 throw new ArgumentNullException("exception");
 
             Message = exception.Message;
+            MethodBase targetSite;
+#if PCL
+            dynamic exc = exception;
 
-#if !PCL
-
-            if (exception.TargetSite != null)
+            try
+            {
+                targetSite = exc.TargetSite;
+            }
+            catch(RuntimeBinderException)
+            {
+                targetSite = null;
+            }
+#else
+            targetSite = exception.TargetSite;
+#endif
+            if (targetSite != null)
             {
                 // ReSharper disable ConditionIsAlwaysTrueOrFalse => not for dynamic types.
                 Culprit = String.Format("{0} in {1}",
-                                        ((exception.TargetSite.ReflectedType == null)
+                                        ((targetSite.ReflectedType == null)
                                              ? "<dynamic type>"
-                                             : exception.TargetSite.ReflectedType.FullName),
-                                        exception.TargetSite.Name);
+                                             : targetSite.ReflectedType.FullName),
+                                        targetSite.Name);
                 // ReSharper restore ConditionIsAlwaysTrueOrFalse
             }
-#endif
+
 
             Exceptions = new List<SentryException>();
 
