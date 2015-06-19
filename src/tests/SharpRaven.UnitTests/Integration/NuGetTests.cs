@@ -60,7 +60,6 @@ namespace SharpRaven.UnitTests.Integration
                 RedirectStandardError = true,
                 RedirectStandardOutput = true,
                 WindowStyle = ProcessWindowStyle.Hidden,
-                //WorkingDirectory = MakeAbsolute(@".\src\app\SharpRaven\")
             };
 
             using (var process = new Process())
@@ -80,7 +79,6 @@ namespace SharpRaven.UnitTests.Integration
         private static string MakeAbsolute(string relativePath)
         {
             return Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, @"..\..\..\..\..\..\", relativePath));
-
         }
     }
 }

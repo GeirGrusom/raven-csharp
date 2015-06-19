@@ -73,7 +73,6 @@ namespace SharpRaven.Data
 
             Exceptions = new List<SentryException>();
 
-
             for (Exception currentException = exception;
                 currentException != null;
                 currentException = currentException.InnerException)
@@ -102,6 +101,18 @@ namespace SharpRaven.Data
                 };
 
                 Exceptions.Add(sentryException);
+            }
+
+            // ReflectionTypeLoadException doesn't contain much useful info in itself, and needs special handling
+            ReflectionTypeLoadException reflectionTypeLoadException = exception as ReflectionTypeLoadException;
+            if (reflectionTypeLoadException != null)
+            {
+                foreach (Exception loaderException in reflectionTypeLoadException.LoaderExceptions)
+                {
+                    SentryException sentryException = new SentryException(loaderException);
+
+                    Exceptions.Add(sentryException);
+                }
             }
         }
 

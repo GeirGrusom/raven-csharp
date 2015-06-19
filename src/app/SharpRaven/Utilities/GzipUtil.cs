@@ -33,7 +33,6 @@ using System.IO;
 using System.IO.Compression;
 using System.Text;
 
-
 namespace SharpRaven.Utilities
 {
     /// <summary>
