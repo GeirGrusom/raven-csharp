@@ -220,8 +220,6 @@ namespace SharpRaven.Data
 #else
                 Console.WriteLine(exception);
 #endif
-                throw;
-
             }
 
             return dictionary;

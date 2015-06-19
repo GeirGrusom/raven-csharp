@@ -75,7 +75,6 @@ namespace SharpRaven.UnitTests.Integration
             }
         }
 
-
         private static string MakeAbsolute(string relativePath)
         {
             return Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, @"..\..\..\..\..\..\", relativePath));
